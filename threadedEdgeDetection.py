@@ -1,28 +1,49 @@
+import threading
 from PIL import Image
 import math
 
-def sobelEdgeDetection(image: Image.Image) -> Image.Image:
+def sobelEdgeDetection(image: Image.Image, threadCount: int) -> Image.Image:
     """
     Applies the Sobel Edge Detection Algorithm to the given image. Fast but subject to noise. \n
     Returns a Greyscale ("L" Mode) image.
     """
 
-    #3:59 for a 13,5 MPixel image with a M1 Macbook Pro
+    #1:43 for a 13,5 MPixel image with a M1 Macbook Pro with 8 threads
 
     greyscaleImage : Image.Image
     greyscaleImage = image.convert('L')
-
     width, height = greyscaleImage.size
-
-    # Used to calculate progress
-    pixelCount = width * height
-    pixelsDone = 0
-
-    outputImage = Image.new('L', (width, height))
+    outputImage = Image.new('L', (width, height), 255)
     
-    # Might need to change this to be more efficient
-    # O(n^2) Complexity
+    # Add progress tracking
+    progress_lock = threading.Lock()
+    total_pixels = width * height
+    progress = {'processed': 0}
+
+    print(f"Starting Sobel Edge Detection with {threadCount} threads...")
+    
+    threads = []
+    for threadId in range(threadCount):
+        threadWidth = int(width / threadCount)
+        threadX = threadWidth * threadId
+        thread = threading.Thread(
+            target=sobelEdgeDetectionThread, 
+            args=(greyscaleImage, outputImage, threadX, threadWidth, progress, progress_lock, total_pixels),
+            daemon=True
+        )
+        threads.append(thread)
+        thread.start()
+
+    for thread in threads:
+        thread.join()
+
+    return outputImage
+
+def sobelEdgeDetectionThread(greyscaleImage: Image.Image, outputImage: Image.Image, startX: int, width: int, progress: dict, lock: threading.Lock, total_pixels: int):
+    height = greyscaleImage.size[1]
+
     for x in range(width):
+        x += startX
         for y in range(height):
             pixelValueGrid = getPixelValueGrid(greyscaleImage, x, y, 3, 3)
 
@@ -42,13 +63,14 @@ def sobelEdgeDetection(image: Image.Image) -> Image.Image:
                 GyValue += Gy[i] * pixelValueGrid[i]
 
             value = math.sqrt(math.pow(GxValue, 2) + math.pow(GyValue, 2))
-
             outputImage.putpixel((x, y), int(value))
+            
+            with lock:
+                progress['processed'] += 1
+                if progress['processed'] % (total_pixels // 100) == 0:
+                    percentage = (progress['processed'] / total_pixels) * 100
+                    print(f"Edge Detection progress: {int(percentage)}%")
 
-            pixelsDone += 1
-            print(f"Progress: {pixelsDone}/{pixelCount} ({int(pixelsDone/pixelCount*100)}%) Pixel: ({x}, {y}) Value: {value}")
-
-    return outputImage
 
 def getPixelValueGrid(image: Image.Image, x: int, y: int, width: int, height: int) -> list:
     """
