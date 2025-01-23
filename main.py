@@ -4,19 +4,19 @@ import threadedEdgeDetection
 import effects
 import time
 
-image = Image.open("image.jpg")
+image = Image.open("image.png")
 
 startTime = time.time()
 
 #edge = edgeDetection.sobelEdgeDetection(image)
-edge = threadedEdgeDetection.sobelEdgeDetection(image, 4)
+edge = threadedEdgeDetection.sobelEdgeDetection(image, 12)
 
 sobelStopTime = time.time()
 print(f"Sobel Edge Detection Time: {sobelStopTime - startTime}s")
 
 edge.show()
 
-newImage = effects.melt(image, edge, Length=30, Threshold=180)
+newImage = effects.melt(image, edge, Length=15, Threshold=180)
 
 meltStopTime = time.time()
 print(f"Melt Time: {meltStopTime - sobelStopTime}s")

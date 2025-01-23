@@ -65,11 +65,11 @@ def sobelEdgeDetectionThread(greyscaleImage: Image.Image, outputImage: Image.Ima
             value = math.sqrt(math.pow(GxValue, 2) + math.pow(GyValue, 2))
             outputImage.putpixel((x, y), int(value))
             
-            with lock:
-                progress['processed'] += 1
-                if progress['processed'] % (total_pixels // 100) == 0:
-                    percentage = (progress['processed'] / total_pixels) * 100
-                    print(f"Edge Detection progress: {int(percentage)}%")
+            # with lock:
+            #     progress['processed'] += 1
+            #     if progress['processed'] % (total_pixels // 100) == 0:
+            #         percentage = (progress['processed'] / total_pixels) * 100
+            #         print(f"Edge Detection progress: {int(percentage)}%")
 
 
 def getPixelValueGrid(image: Image.Image, x: int, y: int, width: int, height: int) -> list:
